@@ -85,38 +85,44 @@ stages:
               environmentServiceNameAzureRM: '$(serviceConnection)'
               commandOptions: '-var="subscription_id=$(subscriptionId)"'
 
-  - stage: Apply
-    displayName: 'Deploy Azure Landing Zone'
-    dependsOn: Plan
-    condition: succeeded()
-    jobs:
-      - job: TerraformApply
+  -   - stage: Apply
+        displayName: 'Deploy Azure Landing Zone'
+        dependsOn: Plan
+        condition: succeeded()
+
+        jobs:
+      - deployment: TerraformApply
         displayName: 'Terraform Apply'
-        steps:
-          - checkout: self
+        environment: 'landingzone-dev-approval'
 
-          - task: TerraformInstaller@1
-            displayName: 'Install Terraform'
-            inputs:
-              terraformVersion: '1.9.8'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
 
-          - task: TerraformTaskV4@4
-            displayName: 'Terraform Init'
-            inputs:
-              provider: 'azurerm'
-              command: 'init'
-              workingDirectory: '$(terraformWorkingDirectory)'
-              backendServiceArm: '$(serviceConnection)'
-              backendAzureRmResourceGroupName: '$(backendResourceGroup)'
-              backendAzureRmStorageAccountName: '$(backendStorageAccount)'
-              backendAzureRmContainerName: '$(backendContainer)'
-              backendAzureRmKey: '$(backendKey)'
+                - task: TerraformInstaller@1
+                  displayName: 'Install Terraform'
+                  inputs:
+                    terraformVersion: '1.9.8'
 
-          - task: TerraformTaskV4@4
-            displayName: 'Terraform Apply'
-            inputs:
-              provider: 'azurerm'
-              command: 'apply'
-              workingDirectory: '$(terraformWorkingDirectory)'
-              environmentServiceNameAzureRM: '$(serviceConnection)'
-              commandOptions: '-auto-approve -var="subscription_id=$(subscriptionId)"'
+                - task: TerraformTaskV4@4
+                  displayName: 'Terraform Init'
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'init'
+                    workingDirectory: '$(terraformWorkingDirectory)'
+                    backendServiceArm: '$(serviceConnection)'
+                    backendAzureRmResourceGroupName: '$(backendResourceGroup)'
+                    backendAzureRmStorageAccountName: '$(backendStorageAccount)'
+                    backendAzureRmContainerName: '$(backendContainer)'
+                    backendAzureRmKey: '$(backendKey)'
+
+                - task: TerraformTaskV4@4
+                  displayName: 'Terraform Apply'
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'apply'
+                    workingDirectory: '$(terraformWorkingDirectory)'
+                    environmentServiceNameAzureRM: '$(serviceConnection)'
+                    commandOptions: '-auto-approve -var="subscription_id=$(subscriptionId)"'
