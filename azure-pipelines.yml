@@ -1,19 +1,117 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- main
+  branches:
+    include:
+      - main
 
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  terraformWorkingDirectory: '.'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+  # Replace with your Azure DevOps service connection name
+  serviceConnection: 'sc-azure-landingzone-dev'
+
+  # Replace with your actual Azure subscription ID
+  subscriptionId: '799ede91-1664-4c8e-bdcf-a49c7dcb1ca7'
+
+  # These must point to your EXISTING Terraform state Storage Account
+  backendResourceGroup: 'rg-terraform-state-dev'
+  backendStorageAccount: 'sttfamitkurmapu28'
+  backendContainer: 'tfstate'
+  backendKey: 'landingzone-dev.tfstate'
+
+stages:
+  - stage: Validate
+    displayName: 'Validate Terraform'
+
+    jobs:
+      - job: ValidateTerraform
+        displayName: 'Terraform Init and Validate'
+
+        steps:
+          - checkout: self
+
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              backendServiceArm: '$(serviceConnection)'
+              backendAzureRmResourceGroupName: '$(backendResourceGroup)'
+              backendAzureRmStorageAccountName: '$(backendStorageAccount)'
+              backendAzureRmContainerName: '$(backendContainer)'
+              backendAzureRmKey: '$(backendKey)'
+
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Validate'
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(terraformWorkingDirectory)'
+
+  - stage: Plan
+    displayName: 'Plan Infrastructure Changes'
+    dependsOn: Validate
+
+    jobs:
+      - job: TerraformPlan
+        displayName: 'Terraform Plan'
+
+        steps:
+          - checkout: self
+
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              backendServiceArm: '$(serviceConnection)'
+              backendAzureRmResourceGroupName: '$(backendResourceGroup)'
+              backendAzureRmStorageAccountName: '$(backendStorageAccount)'
+              backendAzureRmContainerName: '$(backendContainer)'
+              backendAzureRmKey: '$(backendKey)'
+
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Plan'
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              environmentServiceNameAzureRM: '$(serviceConnection)'
+              commandOptions: '-var="subscription_id=$(subscriptionId)"'
+
+  - stage: Apply
+    displayName: 'Deploy Azure Landing Zone'
+    dependsOn: Plan
+    condition: succeeded()
+
+    jobs:
+      - job: TerraformApply
+        displayName: 'Terraform Apply'
+
+        steps:
+          - checkout: self
+
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              backendServiceArm: '$(serviceConnection)'
+              backendAzureRmResourceGroupName: '$(backendResourceGroup)'
+              backendAzureRmStorageAccountName: '$(backendStorageAccount)'
+              backendAzureRmContainerName: '$(backendContainer)'
+              backendAzureRmKey: '$(backendKey)'
+
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Apply'
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              environmentServiceNameAzureRM: '$(serviceConnection)'
+              commandOptions: '-auto-approve -var="subscription_id=$(subscriptionId)"'
