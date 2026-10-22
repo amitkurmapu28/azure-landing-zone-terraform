@@ -31,6 +31,39 @@ stages:
 
         steps:
           - checkout: self
+          ```yaml
+jobs:
+  - job: ValidateTerraform
+    displayName: 'Terraform Init and Validate'
+
+    steps:
+      - checkout: self
+
+      # Install Terraform CLI before running Terraform commands
+      - task: TerraformInstaller@1
+        displayName: 'Install Terraform'
+        inputs:
+          terraformVersion: '1.9.8'
+
+      - task: TerraformTaskV4@4
+        displayName: 'Terraform Init'
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          workingDirectory: '$(terraformWorkingDirectory)'
+          backendServiceArm: '$(serviceConnection)'
+          backendAzureRmResourceGroupName: '$(backendResourceGroup)'
+          backendAzureRmStorageAccountName: '$(backendStorageAccount)'
+          backendAzureRmContainerName: '$(backendContainer)'
+          backendAzureRmKey: '$(backendKey)'
+
+      - task: TerraformTaskV4@4
+        displayName: 'Terraform Validate'
+        inputs:
+          provider: 'azurerm'
+          command: 'validate'
+          workingDirectory: '$(terraformWorkingDirectory)'
+```
 
           - task: TerraformTaskV4@4
             displayName: 'Terraform Init'
