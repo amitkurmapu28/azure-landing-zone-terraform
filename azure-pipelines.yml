@@ -1,3 +1,4 @@
+```yaml
 trigger:
   branches:
     include:
@@ -11,7 +12,7 @@ variables:
   serviceConnection: 'sc-azure-landingzone-dev'
   subscriptionId: '799ede91-1664-4c8e-bdcf-a49c7dcb1ca7'
 
-  # These must refer to an existing Terraform state backend.
+  # Terraform state backend
   backendResourceGroup: 'rg-terraform-state-dev'
   backendStorageAccount: 'sttfamitkurmapu28'
   backendContainer: 'tfstate'
@@ -85,16 +86,14 @@ stages:
               environmentServiceNameAzureRM: '$(serviceConnection)'
               commandOptions: '-var="subscription_id=$(subscriptionId)"'
 
-      - stage: Apply
-        displayName: 'Deploy Azure Landing Zone'
-        dependsOn: Plan
-        condition: succeeded()
-
-        jobs:
-        - deployment: TerraformApply
-          displayName: 'Terraform Apply'
-          environment: 'landingzone-dev-approval'
-
+  - stage: Apply
+    displayName: 'Deploy Azure Landing Zone'
+    dependsOn: Plan
+    condition: succeeded()
+    jobs:
+      - deployment: TerraformApply
+        displayName: 'Terraform Apply'
+        environment: 'landingzone-dev-approval'
         strategy:
           runOnce:
             deploy:
