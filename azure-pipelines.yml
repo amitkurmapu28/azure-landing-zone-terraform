@@ -31,7 +31,7 @@ stages:
 
         steps:
           - checkout: self
-          ```yaml
+        
 jobs:
   - job: ValidateTerraform
     displayName: 'Terraform Init and Validate'
