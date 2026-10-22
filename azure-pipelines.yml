@@ -85,7 +85,7 @@ stages:
               environmentServiceNameAzureRM: '$(serviceConnection)'
               commandOptions: '-var="subscription_id=$(subscriptionId)"'
 
-  -   - stage: Apply
+      - stage: Apply
         displayName: 'Deploy Azure Landing Zone'
         dependsOn: Plan
         condition: succeeded()
