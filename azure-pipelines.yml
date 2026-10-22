@@ -91,9 +91,9 @@ stages:
         condition: succeeded()
 
         jobs:
-      - deployment: TerraformApply
-        displayName: 'Terraform Apply'
-        environment: 'landingzone-dev-approval'
+        - deployment: TerraformApply
+          displayName: 'Terraform Apply'
+          environment: 'landingzone-dev-approval'
 
         strategy:
           runOnce:
