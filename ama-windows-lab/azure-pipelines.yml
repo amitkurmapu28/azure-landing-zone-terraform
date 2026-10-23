@@ -11,8 +11,6 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  
-variables:
   - group: vg-ama-windows-lab
   - name: terraformVersion
     value: '1.9.8'
@@ -66,7 +64,8 @@ stages:
                   -backend-config="storage_account_name=$(backendStorageAccount)" \
                   -backend-config="container_name=$(backendContainer)" \
                   -backend-config="key=$(backendKey)" \
-                  -backend-config="use_azuread_auth=true"
+                  -backend-config="use_azuread_auth=true" \
+                  -backend-config="use_oidc=true" 
 
                 # Check formatting and configuration
                 terraform fmt -check -recursive
@@ -76,9 +75,19 @@ stages:
                 terraform plan \
                   -input=false \
                   -out=tfplan
+            
             env:
               TF_VAR_subscription_id: $(subscriptionId)
               TF_VAR_admin_password: $(TF_VAR_admin_password)
+              ARM_USE_OIDC: 'true'
+              ARM_USE_AZUREAD: 'true'
+              ARM_CLIENT_ID: $(AZURESUBSCRIPTION_CLIENT_ID)
+              ARM_TENANT_ID: $(AZURESUBSCRIPTION_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(subscriptionId)
+              ARM_OIDC_AZURE_SERVICE_CONNECTION_ID: $(AZURESUBSCRIPTION_SERVICE_CONNECTION_ID)
+              ARM_OIDC_REQUEST_TOKEN: $(System.AccessToken)
+              SYSTEM_OIDCREQUESTURI: $(System.OidcRequestUri)
+
 
           - publish: '$(workingDirectory)/tfplan'
             artifact: terraform-plan
@@ -138,6 +147,16 @@ stages:
 
                       # Display resource outputs
                       terraform output
-                  env:
-                    TF_VAR_subscription_id: $(subscriptionId)
-                    TF_VAR_admin_password: $(TF_VAR_admin_password)
+                  
+            env:
+              TF_VAR_subscription_id: $(subscriptionId)
+              TF_VAR_admin_password: $(TF_VAR_admin_password)
+              ARM_USE_OIDC: 'true'
+              ARM_USE_AZUREAD: 'true'
+              ARM_CLIENT_ID: $(AZURESUBSCRIPTION_CLIENT_ID)
+              ARM_TENANT_ID: $(AZURESUBSCRIPTION_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(subscriptionId)
+              ARM_OIDC_AZURE_SERVICE_CONNECTION_ID: $(AZURESUBSCRIPTION_SERVICE_CONNECTION_ID)
+              ARM_OIDC_REQUEST_TOKEN: $(System.AccessToken)
+              SYSTEM_OIDCREQUESTURI: $(System.OidcRequestUri)
+
