@@ -11,8 +11,6 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  
-variables:
   - group: vg-ama-windows-lab
   - name: terraformVersion
     value: '1.9.8'
