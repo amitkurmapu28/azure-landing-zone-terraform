@@ -116,7 +116,6 @@ resource "azurerm_virtual_machine_extension" "ama" {
 }
 
 # 11. Data Collection Rule
-
 resource "azurerm_monitor_data_collection_rule" "lab" {
   name                = "dcr-ama-windows-lab"
   resource_group_name = azurerm_resource_group.lab.name
@@ -133,7 +132,12 @@ resource "azurerm_monitor_data_collection_rule" "lab" {
   }
 
   data_flow {
-    streams      = ["Microsoft-WindowsEvent", "Microsoft-Perf"]
+    streams      = ["Microsoft-WindowsEvent"]
+    destinations = ["law-destination"]
+  }
+
+  data_flow {
+    streams      = ["Microsoft-Perf"]
     destinations = ["law-destination"]
   }
 
@@ -141,9 +145,10 @@ resource "azurerm_monitor_data_collection_rule" "lab" {
     windows_event_log {
       name    = "windows-event-source"
       streams = ["Microsoft-WindowsEvent"]
+
       x_path_queries = [
-        "Application!*[System[(Level=1 or Level=2 or Level=3)]]",
-        "System!*[System[(Level=1 or Level=2 or Level=3)]]"
+        "Application!*[System[(Level = 1 or Level = 2 or Level = 3)]]",
+        "System!*[System[(Level = 1 or Level = 2 or Level = 3)]]"
       ]
     }
 
@@ -151,6 +156,7 @@ resource "azurerm_monitor_data_collection_rule" "lab" {
       name                          = "windows-performance-source"
       streams                       = ["Microsoft-Perf"]
       sampling_frequency_in_seconds = 60
+
       counter_specifiers = [
         "\\Processor(_Total)\\% Processor Time",
         "\\Memory\\Available MBytes",
