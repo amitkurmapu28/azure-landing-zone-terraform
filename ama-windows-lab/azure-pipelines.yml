@@ -73,7 +73,9 @@ stages:
                   -backend-config="container_name=$(backendContainer)" \
                   -backend-config="key=$(backendKey)" \
                   -backend-config="use_azuread_auth=true" \
-                  -backend-config="use_oidc=true"
+                  -backend-config="use_oidc=true" \
+                  -backend-config="use_cli=false" \
+                  -backend-config="oidc_azure_service_connection_id=$AZURESUBSCRIPTION_SERVICE_CONNECTION_ID"
 
                 # Check formatting and configuration
                 terraform fmt -check -recursive
@@ -154,8 +156,9 @@ stages:
                         -backend-config="container_name=$(backendContainer)" \
                         -backend-config="key=$(backendKey)" \
                         -backend-config="use_azuread_auth=true" \
-                        -backend-config="use_oidc=true"
-
+                        -backend-config="use_oidc=true" \
+                        -backend-config="use_cli=false" \
+                        -backend-config="oidc_azure_service_connection_id=$AZURESUBSCRIPTION_SERVICE_CONNECTION_ID"
                       # Apply the exact plan created in Stage 1
                       terraform apply \
                         -input=false \
