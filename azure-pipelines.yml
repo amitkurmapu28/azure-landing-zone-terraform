@@ -2,7 +2,9 @@ trigger:
   branches:
     include:
       - main
-
+  paths:
+    exclude:
+      - ama-windows-lab/*
 pool:
   vmImage: ubuntu-latest
 
