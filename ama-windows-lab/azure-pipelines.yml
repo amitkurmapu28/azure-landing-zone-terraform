@@ -26,7 +26,7 @@ variables:
     value: 'ama-windows-lab.tfstate'
 
 stages:
-  # Stage 1: Validate Terraform and create a plan
+  # Stage 1: Validate Terraform and create a saved plan
   - stage: Plan
     displayName: 'Terraform Validate and Plan'
     jobs:
@@ -39,11 +39,19 @@ stages:
             displayName: 'Terraform Init, Validate and Plan'
             inputs:
               azureSubscription: 'sc-azure-landingzone-dev'
+              addSpnToEnvironment: true
               scriptType: bash
               scriptLocation: inlineScript
               workingDirectory: '$(workingDirectory)'
               inlineScript: |
                 set -euo pipefail
+
+                export ARM_CLIENT_ID="$servicePrincipalId"
+                export ARM_TENANT_ID="$tenantId"
+                export ARM_SUBSCRIPTION_ID="$TF_VAR_subscription_id"
+                export ARM_USE_OIDC=true
+                export ARM_USE_AZUREAD=true
+                export ARM_OIDC_AZURE_SERVICE_CONNECTION_ID="$AZURESUBSCRIPTION_SERVICE_CONNECTION_ID"
 
                 # Install Terraform
                 mkdir -p "$HOME/.local/bin"
@@ -57,7 +65,7 @@ stages:
                 # Select the target subscription
                 az account set --subscription "$TF_VAR_subscription_id"
 
-                # Initialize the separate remote state
+                # Initialize the dedicated lab state
                 terraform init \
                   -input=false \
                   -backend-config="resource_group_name=$(backendResourceGroup)" \
@@ -65,7 +73,7 @@ stages:
                   -backend-config="container_name=$(backendContainer)" \
                   -backend-config="key=$(backendKey)" \
                   -backend-config="use_azuread_auth=true" \
-                  -backend-config="use_oidc=true" 
+                  -backend-config="use_oidc=true"
 
                 # Check formatting and configuration
                 terraform fmt -check -recursive
@@ -75,25 +83,20 @@ stages:
                 terraform plan \
                   -input=false \
                   -out=tfplan
-            
+
             env:
               TF_VAR_subscription_id: $(subscriptionId)
               TF_VAR_admin_password: $(TF_VAR_admin_password)
               ARM_USE_OIDC: 'true'
               ARM_USE_AZUREAD: 'true'
-              ARM_CLIENT_ID: $(AZURESUBSCRIPTION_CLIENT_ID)
-              ARM_TENANT_ID: $(AZURESUBSCRIPTION_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(subscriptionId)
-              ARM_OIDC_AZURE_SERVICE_CONNECTION_ID: $(AZURESUBSCRIPTION_SERVICE_CONNECTION_ID)
-              ARM_OIDC_REQUEST_TOKEN: $(System.AccessToken)
-              SYSTEM_OIDCREQUESTURI: $(System.OidcRequestUri)
-
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
           - publish: '$(workingDirectory)/tfplan'
             artifact: terraform-plan
             displayName: 'Publish Terraform Plan'
 
-  # Stage 2: Apply the reviewed plan after environment approval
+  # Stage 2: Apply the reviewed plan after manual approval
   - stage: Apply
     displayName: 'Terraform Apply'
     dependsOn: Plan
@@ -115,11 +118,19 @@ stages:
                   displayName: 'Apply Terraform Plan'
                   inputs:
                     azureSubscription: 'sc-azure-landingzone-dev'
+                    addSpnToEnvironment: true
                     scriptType: bash
                     scriptLocation: inlineScript
                     workingDirectory: '$(workingDirectory)'
                     inlineScript: |
                       set -euo pipefail
+
+                      export ARM_CLIENT_ID="$servicePrincipalId"
+                      export ARM_TENANT_ID="$tenantId"
+                      export ARM_SUBSCRIPTION_ID="$TF_VAR_subscription_id"
+                      export ARM_USE_OIDC=true
+                      export ARM_USE_AZUREAD=true
+                      export ARM_OIDC_AZURE_SERVICE_CONNECTION_ID="$AZURESUBSCRIPTION_SERVICE_CONNECTION_ID"
 
                       # Install Terraform
                       mkdir -p "$HOME/.local/bin"
@@ -128,35 +139,34 @@ stages:
                       unzip -o /tmp/terraform.zip -d "$HOME/.local/bin"
                       export PATH="$HOME/.local/bin:$PATH"
 
+                      terraform version
+
+                      # Select the target subscription
                       az account set --subscription "$TF_VAR_subscription_id"
 
-                      # Reinitialize the same backend
+                      # Reinitialize the same lab backend
                       terraform init \
                         -input=false \
                         -backend-config="resource_group_name=$(backendResourceGroup)" \
                         -backend-config="storage_account_name=$(backendStorageAccount)" \
                         -backend-config="container_name=$(backendContainer)" \
                         -backend-config="key=$(backendKey)" \
-                        -backend-config="use_azuread_auth=true"
+                        -backend-config="use_azuread_auth=true" \
+                        -backend-config="use_oidc=true"
 
-                      # Apply the exact plan produced by Stage 1
+                      # Apply the exact plan created in Stage 1
                       terraform apply \
                         -input=false \
                         -auto-approve \
                         "$(Pipeline.Workspace)/terraform-plan/tfplan"
 
-                      # Display resource outputs
+                      # Display Terraform outputs
                       terraform output
-                  
-            env:
-              TF_VAR_subscription_id: $(subscriptionId)
-              TF_VAR_admin_password: $(TF_VAR_admin_password)
-              ARM_USE_OIDC: 'true'
-              ARM_USE_AZUREAD: 'true'
-              ARM_CLIENT_ID: $(AZURESUBSCRIPTION_CLIENT_ID)
-              ARM_TENANT_ID: $(AZURESUBSCRIPTION_TENANT_ID)
-              ARM_SUBSCRIPTION_ID: $(subscriptionId)
-              ARM_OIDC_AZURE_SERVICE_CONNECTION_ID: $(AZURESUBSCRIPTION_SERVICE_CONNECTION_ID)
-              ARM_OIDC_REQUEST_TOKEN: $(System.AccessToken)
-              SYSTEM_OIDCREQUESTURI: $(System.OidcRequestUri)
 
+                  env:
+                    TF_VAR_subscription_id: $(subscriptionId)
+                    TF_VAR_admin_password: $(TF_VAR_admin_password)
+                    ARM_USE_OIDC: 'true'
+                    ARM_USE_AZUREAD: 'true'
+                    ARM_SUBSCRIPTION_ID: $(subscriptionId)
+                    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
