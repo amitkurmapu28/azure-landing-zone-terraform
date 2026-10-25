@@ -69,7 +69,7 @@ resource "azurerm_windows_virtual_machine" "lab" {
   computer_name       = "ama-win-lab01"
   resource_group_name = azurerm_resource_group.lab.name
   location            = azurerm_resource_group.lab.location
-  size                = "Standard_B2s"
+  size                = "Standard_D2s_v5"
   admin_username      = var.admin_username
   admin_password      = var.admin_password
 
@@ -116,6 +116,7 @@ resource "azurerm_virtual_machine_extension" "ama" {
 }
 
 # 11. Data Collection Rule
+
 resource "azurerm_monitor_data_collection_rule" "lab" {
   name                = "dcr-ama-windows-lab"
   resource_group_name = azurerm_resource_group.lab.name
@@ -132,19 +133,14 @@ resource "azurerm_monitor_data_collection_rule" "lab" {
   }
 
   data_flow {
-    streams      = ["Microsoft-WindowsEvent"]
-    destinations = ["law-destination"]
-  }
-
-  data_flow {
-    streams      = ["Microsoft-Perf"]
+    streams      = ["Microsoft-WindowsEvent", "Microsoft-Perf"]
     destinations = ["law-destination"]
   }
 
   data_sources {
     windows_event_log {
-      name    = "windows-event-source"
-      streams = ["Microsoft-WindowsEvent"]
+      name           = "windows-event-source"
+      streams        = ["Microsoft-WindowsEvent"]
       x_path_queries = [
         "Application!*[System[(Level=1 or Level=2 or Level=3)]]",
         "System!*[System[(Level=1 or Level=2 or Level=3)]]"
@@ -155,7 +151,6 @@ resource "azurerm_monitor_data_collection_rule" "lab" {
       name                          = "windows-performance-source"
       streams                       = ["Microsoft-Perf"]
       sampling_frequency_in_seconds = 60
-
       counter_specifiers = [
         "\\Processor(_Total)\\% Processor Time",
         "\\Memory\\Available MBytes",
@@ -163,13 +158,4 @@ resource "azurerm_monitor_data_collection_rule" "lab" {
       ]
     }
   }
-}
-
-# 12. Associate the Data Collection Rule with the VM
-resource "azurerm_monitor_data_collection_rule_association" "lab" {
-  name                    = "dcra-ama-windows-lab"
-  target_resource_id      = azurerm_windows_virtual_machine.lab.id
-  data_collection_rule_id = azurerm_monitor_data_collection_rule.lab.id
-
-  description = "Associate Windows monitoring rule with the lab VM"
 }
