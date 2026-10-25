@@ -137,7 +137,7 @@ resource "azurerm_monitor_data_collection_rule" "lab" {
   }
 
   data_flow {
-    streams      = ["Microsoft-Event"]
+    streams      = ["Microsoft-Perf"]
     destinations = ["law-destination"]
   }
 
