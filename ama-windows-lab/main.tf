@@ -132,19 +132,19 @@ resource "azurerm_monitor_data_collection_rule" "lab" {
   }
 
   data_flow {
-    streams      = ["Microsoft-WindowsEvent"]
+    streams      = ["Microsoft-Event"]
     destinations = ["law-destination"]
   }
 
   data_flow {
-    streams      = ["Microsoft-Perf"]
+    streams      = ["Microsoft-Event"]
     destinations = ["law-destination"]
   }
 
   data_sources {
     windows_event_log {
       name    = "windows-event-source"
-      streams = ["Microsoft-WindowsEvent"]
+      streams = ["Microsoft-Event"]
 
       x_path_queries = [
         "Application!*[System[(Level = 1 or Level = 2 or Level = 3)]]",
