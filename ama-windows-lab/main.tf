@@ -139,8 +139,8 @@ resource "azurerm_monitor_data_collection_rule" "lab" {
 
   data_sources {
     windows_event_log {
-      name           = "windows-event-source"
-      streams        = ["Microsoft-WindowsEvent"]
+      name    = "windows-event-source"
+      streams = ["Microsoft-WindowsEvent"]
       x_path_queries = [
         "Application!*[System[(Level=1 or Level=2 or Level=3)]]",
         "System!*[System[(Level=1 or Level=2 or Level=3)]]"
