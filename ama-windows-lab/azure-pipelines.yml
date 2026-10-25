@@ -84,13 +84,15 @@ stages:
                   -input=false \
                   -out=tfplan
 
-            env:
-              TF_VAR_subscription_id: $(subscriptionId)
-              TF_VAR_admin_password: $(TF_VAR_admin_password)
-              ARM_USE_OIDC: 'true'
-              ARM_USE_AZUREAD: 'true'
-              ARM_SUBSCRIPTION_ID: $(subscriptionId)
-              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+              env:
+                    TF_VAR_subscription_id: $(subscriptionId)
+                    TF_VAR_admin_password: $(TF_VAR_admin_password)
+                    ARM_USE_OIDC: 'true'
+                    ARM_USE_AZUREAD: 'true'
+                    ARM_SUBSCRIPTION_ID: $(subscriptionId)
+                    ARM_OIDC_REQUEST_TOKEN: $(System.AccessToken)
+                    ARM_OIDC_REQUEST_URL: $(System.OidcRequestUri)
+                    ARM_OIDC_AZURE_SERVICE_CONNECTION_ID: $(AZURESUBSCRIPTION_SERVICE_CONNECTION_ID)
 
           - publish: '$(workingDirectory)/tfplan'
             artifact: terraform-plan
@@ -169,4 +171,6 @@ stages:
                     ARM_USE_OIDC: 'true'
                     ARM_USE_AZUREAD: 'true'
                     ARM_SUBSCRIPTION_ID: $(subscriptionId)
-                    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+                    ARM_OIDC_REQUEST_TOKEN: $(System.AccessToken)
+                    ARM_OIDC_REQUEST_URL: $(System.OidcRequestUri)
+                    ARM_OIDC_AZURE_SERVICE_CONNECTION_ID: $(AZURESUBSCRIPTION_SERVICE_CONNECTION_ID)
