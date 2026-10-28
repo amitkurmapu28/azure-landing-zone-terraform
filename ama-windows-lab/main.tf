@@ -65,13 +65,14 @@ resource "azurerm_network_interface_security_group_association" "lab" {
 
 # 8. Windows Server virtual machine
 resource "azurerm_windows_virtual_machine" "lab" {
-  name                = var.vm_name
-  computer_name       = "ama-win-lab01"
-  resource_group_name = azurerm_resource_group.lab.name
-  location            = azurerm_resource_group.lab.location
-  size                = "Standard_D2s_v5"
-  admin_username      = var.admin_username
-  admin_password      = var.admin_password
+  name                       = var.vm_name
+  computer_name              = "ama-win-lab01"
+  resource_group_name        = azurerm_resource_group.lab.name
+  location                   = azurerm_resource_group.lab.location
+  size                       = "Standard_D2s_v5"
+  encryption_at_host_enabled = true
+  admin_username             = var.admin_username
+  admin_password             = var.admin_password
 
   network_interface_ids = [
     azurerm_network_interface.lab.id

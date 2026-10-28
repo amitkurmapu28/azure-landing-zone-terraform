@@ -38,6 +38,7 @@ resource "azurerm_subnet" "landing_zone" {
   address_prefixes     = var.subnet_prefixes
 }
 
+
 # 4. Storage Account
 resource "azurerm_storage_account" "landing_zone" {
   name = "stlz${random_string.suffix.result}"
@@ -46,19 +47,34 @@ resource "azurerm_storage_account" "landing_zone" {
   location            = azurerm_resource_group.landing_zone.location
 
   account_tier             = "Standard"
-  account_replication_type = "LRS"
+  account_replication_type = "ZRS"
   account_kind             = "StorageV2"
 
   min_tls_version                 = "TLS1_2"
   https_traffic_only_enabled      = true
-  public_network_access_enabled   = true
+  public_network_access_enabled   = false
   allow_nested_items_to_be_public = false
+
 
   tags = {
     Environment = var.environment
     ManagedBy   = "Terraform"
   }
 }
+
+# Configure Storage Account queue service logging
+resource "azurerm_storage_account_queue_properties" "landing_zone" {
+  storage_account_id = azurerm_storage_account.landing_zone.id
+
+  logging {
+    read                  = true
+    write                 = true
+    delete                = true
+    version               = "1.0"
+    retention_policy_days = 7
+  }
+}
+
 
 # 5. Key Vault
 resource "azurerm_key_vault" "landing_zone" {
@@ -72,14 +88,22 @@ resource "azurerm_key_vault" "landing_zone" {
 
   soft_delete_retention_days = 7
   purge_protection_enabled   = true
-
   rbac_authorization_enabled = true
+
+  # Restrict access through the public network
+  public_network_access_enabled = false
+
+  network_acls {
+    bypass         = "None"
+    default_action = "Deny"
+  }
 
   tags = {
     Environment = var.environment
     ManagedBy   = "Terraform"
   }
 }
+
 
 # Current Azure identity/tenant information
 data "azurerm_client_config" "current" {}
